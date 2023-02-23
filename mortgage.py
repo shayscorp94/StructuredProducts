@@ -93,10 +93,14 @@ class ARM(Mortgage):
 
     def gen_effective_rate_vector(self):
         self.effective_rate_vector[:self.initial_term] = self.initial_rate
-        self.effective_rate_vector[self.initial_term] = max(self.arm_floor, min(self.initial_rate + min(self.initial_cap, self.lifetime_cap), self.rate_vector[self.initial_term ] + self.arm_margin))
+        self.effective_rate_vector[self.initial_term] = max(self.arm_floor,
+                                        min(self.initial_rate + min(self.initial_cap, self.lifetime_cap),
+                                            self.rate_vector[self.initial_term ] + self.arm_margin))
         for i in range(self.initial_term + 1, self.term):
             if i % self.arm_period == 0:
-                self.effective_rate_vector[i] = max(self.arm_floor, min(self.effective_rate_vector[i - 1] + self.rate_adj_cap, self.rate_vector[i] + self.arm_margin, self.initial_rate + self.lifetime_cap))
+                self.effective_rate_vector[i] = max(self.arm_floor,
+                                        min(self.effective_rate_vector[i - 1] + self.rate_adj_cap,
+                                        self.rate_vector[i] + self.arm_margin, self.initial_rate + self.lifetime_cap))
             else:
                 self.effective_rate_vector[i] = self.effective_rate_vector[i - 1]
 
