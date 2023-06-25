@@ -8,7 +8,7 @@ from dateutil import relativedelta
 
 class PACSupportTranche:
     def __init__(self, pac_lower_band: int, pac_upper_band: int, pac_par_amt: float, support_par_amt: float,
-                 pt_pool: PassThroughPool, psa: float):
+                 pt_pool: PassThroughPool, psa: int):
         """
         Class that defines a Planned Amortization Class structure
 
