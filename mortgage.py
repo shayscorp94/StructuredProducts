@@ -210,11 +210,50 @@ class ARM(Mortgage):
         balance_array[-1] += self.deferred_balance
         return pi_payments, balance_array, interest_array
 
-    pass
+
+def arm_payment_table_generator(start_date: datetime, term: int, pi_payments: np.ndarray,
+                                balance_array: np.ndarray, interest_array: np.ndarray):
+    """
+    function that generates a table of ARM trailing balance, monthly payments and interest over time
+    """
+    first_pay_date = (start_date + relativedelta.relativedelta(months=1)).replace(day=1)
+    payment_dates_array = np.zeros(term).astype(datetime)
+    payment_dates_array[0] = first_pay_date
+    for i in range(1, term):
+        payment_dates_array[i] = (payment_dates_array[i - 1] + relativedelta.relativedelta(months=1)).replace(day=1)
+    df_payments = pd.DataFrame(
+        {'Date': payment_dates_array,  'balance_array': balance_array, 'monthly_payment': pi_payments,
+         'interest_array': interest_array})
+    return df_payments
 
 
+def rate_generator_example():
+    """
+    function to generate a set of estimated forward rates for ARM rate modeling
+    """
+    rate_test = np.zeros(360)
+    rate_test[:60] = 0.04
+    for i in range(60, 360):
+        if i % 12 == 0:
+            rate_test[i] = rate_test[i - 1] + 0.0025
+        else:
+            rate_test[i] = rate_test[i - 1]
+    return rate_test
 
 
+if __name__ == "__main__":
+    start_date = datetime(2020, 1, 1)
+    fixed_loan = FRM(term=358, total_starting_balance=400000000, note_rate=0.06, start_date=start_date)
+    c, balance_array, interest_array = fixed_loan.mtm_payments_generator()
+    df = fixed_loan.payment_breakdown_generator()
+    arm_loan = ARM(term=360, total_starting_balance=200000, deferred_balance=0, start_date=datetime(2020, 1, 1),
+                 initial_term=60, initial_rate=0.04, ref_rate='LIB6M',
+                 rate_vector=rate_generator_example(), io_flag=True, io_term=30,
+                 arm_margin=0, arm_period=12, arm_floor=0.02, initial_cap=0.2, rate_adj_cap=0.2,
+                 lifetime_cap=0.2)
+    pi_payments, balance_array, interest_array = arm_loan.gen_total_arm_schedule()
+    df_arm_payments = arm_payment_table_generator(start_date, 360, pi_payments, balance_array, interest_array)
+    print(df_arm_payments)
 
 
 
