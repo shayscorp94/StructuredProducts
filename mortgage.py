@@ -5,6 +5,21 @@ from dateutil import relativedelta
 
 
 class Mortgage:
+    """
+    Base class that defines the characteristics of a mortgage
+
+    Attributes
+    ----------
+    term: int
+        term length of mortgage in months
+    total_starting_balance: float
+        total principal balance, including any amounts that might be deferred
+    start_date: datetime
+        first date of mortgage payments
+    deferred_balance: float
+        balance deferred on a mortgage (default = 0)
+
+    """
     def __init__(self, term: int, total_starting_balance: float, start_date: datetime, deferred_balance=0):
         self.term = term
         self.total_starting_balance = total_starting_balance
@@ -15,6 +30,14 @@ class Mortgage:
 
 
 class FRM(Mortgage):
+    """
+    Class to determine the payments and payment schedule of a fixed rate mortgage. Inherits from base mortgage class
+
+    Attributes (additional)
+    ----------
+    note_rate: float
+        note rate on the mortgage
+    """
     def __init__(self, term: int, total_starting_balance: float, start_date: datetime, note_rate: float,
                  deferred_balance=0):
         super().__init__(term, total_starting_balance, start_date, deferred_balance)
@@ -30,6 +53,9 @@ class FRM(Mortgage):
         return c, balance_array, interest_array
 
     def payment_breakdown_generator(self):
+        """
+        :return: a time series pandas dataframe of running balance, interest owed and monthly payment
+        """
         first_pay_date = (self.start_date + relativedelta.relativedelta(months=1)).replace(day=1)
         payment_dates_array = np.zeros(self.term).astype(datetime)
         payment_dates_array[0] = first_pay_date
@@ -44,6 +70,9 @@ class FRM(Mortgage):
 
 
 def frm_term_scheduler(current_balance: float, term_length: int, note_rate: float):
+    """
+    function that generates monthly payment, trailing UPB and interest on a FRM
+    """
     p_0 = current_balance
     r = note_rate/12
     c = p_0 * r/(1 - (1 + r)**(-term_length))
@@ -57,6 +86,9 @@ def frm_term_scheduler(current_balance: float, term_length: int, note_rate: floa
 
 
 def io_term_scheduler(current_balance: float, io_term_length: int, effective_rate: float):
+    """
+    function that generates monthly payment, trailing UPB and interest on a FRM
+    """
     rate_vec = effective_rate[:io_term_length]
     payments = current_balance*rate_vec/12
     interest_array = current_balance*rate_vec/12
@@ -75,6 +107,38 @@ class ARM(Mortgage):
                  initial_rate: float, ref_rate: str, rate_vector: np.array, io_flag: bool, arm_margin: float,
                  arm_period: int, arm_floor: float, initial_cap: float, rate_adj_cap: float, lifetime_cap: float,
                  deferred_balance=0, io_term=0):
+        """
+        Class to determine the payments and payment schedule of an adjustable rate mortgage. Inherits from base mortgage class
+
+        Attributes (additional)
+        ----------
+        initial_term: int
+            teaser term
+        initial_rate: float
+            teaser rate
+        ref_rate: str
+            a reference rate that the mortgage is tied to eg: LIBOR6M
+        rate_vector: np.array
+            the actual rate vector/forward curve that determines monthly payment rates
+        io_flag: bool
+            indicates if the loan has an I/O feature
+        arm_margin: float
+            the margin on the mortgage
+        arm_period: int
+            rate reset period in months
+        arm_floor: float
+            floor rate on the mortgage
+        initial_cap: float
+            first rate adjustment cap
+        rate_adj_cap: float
+            subsequent rate adjustment cap
+        lifetime_cap: float
+            lifetime rate cap
+        deferred_balance: float
+            deferred balance on the mortgage (default = 0)
+        io_term: int
+            Interest-only term
+        """
         super().__init__(term, total_starting_balance, start_date, deferred_balance)
         self.initial_term = initial_term
         self.initial_rate = initial_rate
@@ -89,9 +153,12 @@ class ARM(Mortgage):
         self.rate_adj_cap = rate_adj_cap
         self.lifetime_cap = lifetime_cap
         self.effective_rate_vector = np.zeros(self.term)
-        self.reset_points = []
 
     def gen_effective_rate_vector(self):
+        """
+        Given an arbitrary rate vector. generates an effective rate vector that follows the cap structure and teaser
+        term outlined in the mortgage origination docs
+        """
         self.effective_rate_vector[:self.initial_term] = self.initial_rate
         self.effective_rate_vector[self.initial_term] = max(self.arm_floor,
                                         min(self.initial_rate + min(self.initial_cap, self.lifetime_cap),
@@ -105,6 +172,9 @@ class ARM(Mortgage):
                 self.effective_rate_vector[i] = self.effective_rate_vector[i - 1]
 
     def gen_total_arm_schedule(self):
+        """
+        Function that generates monthly payment, trailing UPB and interest on an ARM
+        """
         self.gen_effective_rate_vector()
         pi_payments, balance_array, interest_array = np.zeros(self.term), np.zeros(self.term), np.zeros(self.term)
         if self.io_flag:
