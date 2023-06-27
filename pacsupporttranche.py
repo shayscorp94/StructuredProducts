@@ -155,7 +155,6 @@ if __name__ == '__main__':
     num_loans = 1000
     svc_rate = 0.0025
     g_fee = 0.0025
-    orig_bal = 100000
     cpr_curve = psa_to_smm(360, psa=loan_psa)
     pt_pool = PassThroughPool(mortgage, num_loans, svc_rate, g_fee, cpr_curve[2:])
     pac_support_tranche = PACSupportTranche(pac_lower_band=100, pac_upper_band=250, pac_par_amt=284984594,
