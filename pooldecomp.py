@@ -110,7 +110,7 @@ if __name__ == "__main__":
     pool = PassThroughPool(mortgage, num_loans, svc_rate, g_fee, cpr_curve[2:])
     outstanding_bal, mortgage_pmt, net_interest, scheduled_principal, prepayment, total_principal, cash_flow = \
         pool.cf_breakdown()
-    df = pt_pool_table_generator(start_date=datetime(2020, 1, 1), term=358,
+    df = pt_pool_table_generator(start_date=start_date, term=term,
                                   outstanding_bal=outstanding_bal, mortgage_pmt=mortgage_pmt, net_interest=net_interest,
                                   scheduled_principal=scheduled_principal, prepayment=prepayment,
                                   total_principal=total_principal, cash_flow=cash_flow)
