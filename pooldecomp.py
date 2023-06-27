@@ -90,9 +90,9 @@ def pt_pool_table_generator(start_date: datetime, term: int, outstanding_bal: fl
     payment_dates_array[0] = first_pay_date
     for i in range(1, term):
         payment_dates_array[i] = (payment_dates_array[i - 1] + relativedelta.relativedelta(months=1)).replace(day=1)
-    df_payments = pd.DataFrame({'Date': payment_dates_array, 'outstanding_bal': outstanding_bal, 'mortgage_pmt': mortgage_pmt,
-                                'net_interest': net_interest, 'scheduled_principal': scheduled_principal, 'prepayments': prepayment,
-                                'total_principal': total_principal, 'cash_flow': cash_flow})
+    df_payments = pd.DataFrame({'Date': payment_dates_array, 'OutstandingBalance': outstanding_bal, 'MortgagePayment': mortgage_pmt,
+                                'NetInterest': net_interest, 'ScheduledPrincipal': scheduled_principal, 'Prepayments': prepayment,
+                                'ActualPrincipalPayment': total_principal, 'InvestorCashflow': cash_flow})
     return df_payments
 
 
@@ -105,11 +105,12 @@ if __name__ == "__main__":
     svc_rate = 0.0025
     g_fee = 0.0025
     orig_bal = 100000
-    cpr_curve = psa_to_smm(360, psa=165)
+    loan_psa = 165
+    cpr_curve = psa_to_smm(360, psa=loan_psa)
     pool = PassThroughPool(mortgage, num_loans, svc_rate, g_fee, cpr_curve[2:])
     outstanding_bal, mortgage_pmt, net_interest, scheduled_principal, prepayment, total_principal, cash_flow = \
         pool.cf_breakdown()
-    print(pt_pool_table_generator(start_date=datetime(2020, 1, 1), term=358,
+    df = pt_pool_table_generator(start_date=datetime(2020, 1, 1), term=358,
                                   outstanding_bal=outstanding_bal, mortgage_pmt=mortgage_pmt, net_interest=net_interest,
                                   scheduled_principal=scheduled_principal, prepayment=prepayment,
-                                  total_principal=total_principal, cash_flow=cash_flow))
+                                  total_principal=total_principal, cash_flow=cash_flow)
