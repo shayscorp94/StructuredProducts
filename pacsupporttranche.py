@@ -105,7 +105,7 @@ class PACSupportTranche:
                 if i > 0:
                     outstanding_bal_pac[i] = outstanding_bal_pac[i - 1] - pac_actual_principal[i - 1]
                 if total_principal[i] < pac_effective_principal[i] or \
-                        outstanding_bal_pac[i] > np.sum(pac_effective_principal[i:]):
+                        outstanding_bal_pac[i] - np.sum(pac_effective_principal[i:]) > 1e-4:
                     pac_actual_principal[i] = total_principal[i]
                     pac_actual_interest[i] = pt_rate * outstanding_bal_pac[i]/12
                     if i > 0:
@@ -151,21 +151,22 @@ if __name__ == '__main__':
     start_date = datetime(2020, 1, 1)
     mortgage = FRM(term=term, total_starting_balance=400000, note_rate=0.06,
                     start_date=start_date)
+    loan_psa = 165
     num_loans = 1000
     svc_rate = 0.0025
     g_fee = 0.0025
     orig_bal = 100000
-    cpr_curve = psa_to_smm(360, psa=250)
+    cpr_curve = psa_to_smm(360, psa=loan_psa)
     pt_pool = PassThroughPool(mortgage, num_loans, svc_rate, g_fee, cpr_curve[2:])
     pac_support_tranche = PACSupportTranche(pac_lower_band=100, pac_upper_band=250, pac_par_amt=284984594,
                                            support_par_amt=115015406,
-                 pt_pool=pt_pool, psa=250)
+                 pt_pool=pt_pool, psa=loan_psa)
     outstanding_bal_pac, outstanding_bal_support, pac_actual_principal, pac_actual_interest, \
     support_principal, support_interest = pac_support_tranche.cf_breakdown()
     df = pac_tranche_table_generator(start_date, term,
                                              pac_actual_principal, pac_actual_interest, support_principal, support_interest)
-
-
+    df.to_excel(r'C:\Users\aksha\Documents\MtgCFAnalysis\PSA165.xlsx')
+    # print(df)
 
 
 
