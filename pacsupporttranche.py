@@ -165,8 +165,6 @@ if __name__ == '__main__':
     support_principal, support_interest = pac_support_tranche.cf_breakdown()
     df = pac_tranche_table_generator(start_date, term,
                                              pac_actual_principal, pac_actual_interest, support_principal, support_interest)
-    df.to_excel(r'C:\Users\aksha\Documents\MtgCFAnalysis\PSA165.xlsx')
-    # print(df)
 
 
 
