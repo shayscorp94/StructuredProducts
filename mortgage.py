@@ -62,7 +62,9 @@ class FRM(Mortgage):
         for i in range(1, self.term):
             payment_dates_array[i] = (payment_dates_array[i - 1] + relativedelta.relativedelta(months=1)).replace(day=1)
         c, principal, interest = self.mtm_payments_generator()
-        df_payments = pd.DataFrame({'Date': payment_dates_array, 'Principal': principal, 'Interest': interest,
+        principal_payment = c - interest
+        df_payments = pd.DataFrame({'Date': payment_dates_array, 'Balance': principal, 'Principal': principal_payment,
+                                    'Interest': interest,
                                     'Payment': np.array([c]*self.term)})
         return df_payments
 
@@ -221,9 +223,10 @@ def arm_payment_table_generator(start_date: datetime, term: int, pi_payments: np
     payment_dates_array[0] = first_pay_date
     for i in range(1, term):
         payment_dates_array[i] = (payment_dates_array[i - 1] + relativedelta.relativedelta(months=1)).replace(day=1)
+    principal_array = pi_payments - interest_array
     df_payments = pd.DataFrame(
-        {'Date': payment_dates_array,  'balance_array': balance_array, 'monthly_payment': pi_payments,
-         'interest_array': interest_array})
+        {'Date': payment_dates_array,  'Balance': balance_array, 'MonthlyPayment': pi_payments,
+         'Principal': principal_array, 'Interest': interest_array})
     return df_payments
 
 
@@ -243,18 +246,16 @@ def rate_generator_example():
 
 if __name__ == "__main__":
     start_date = datetime(2020, 1, 1)
-    fixed_loan = FRM(term=358, total_starting_balance=400000000, note_rate=0.06, start_date=start_date)
+    fixed_loan = FRM(term=358, total_starting_balance=400000, note_rate=0.06, start_date=start_date)
     c, balance_array, interest_array = fixed_loan.mtm_payments_generator()
     df = fixed_loan.payment_breakdown_generator()
-    arm_loan = ARM(term=360, total_starting_balance=200000, deferred_balance=0, start_date=datetime(2020, 1, 1),
+    arm_loan = ARM(term=360, total_starting_balance=200000, deferred_balance=0, start_date=start_date,
                  initial_term=60, initial_rate=0.04, ref_rate='LIB6M',
                  rate_vector=rate_generator_example(), io_flag=True, io_term=30,
-                 arm_margin=0, arm_period=12, arm_floor=0.02, initial_cap=0.2, rate_adj_cap=0.2,
-                 lifetime_cap=0.2)
+                 arm_margin=0.01, arm_period=12, arm_floor=0.02, initial_cap=0.05, rate_adj_cap=0.02,
+                 lifetime_cap=0.05)
     pi_payments, balance_array, interest_array = arm_loan.gen_total_arm_schedule()
     df_arm_payments = arm_payment_table_generator(start_date, 360, pi_payments, balance_array, interest_array)
-    print(df_arm_payments)
-
 
 
 
