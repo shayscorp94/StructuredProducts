@@ -32,8 +32,9 @@ class SequentialTranche:
         outstanding_bal, _, net_interest, _, _, total_principal, _ = self.pt_pool.cf_breakdown()
         term_length = len(outstanding_bal)
         pt_rate = self.pt_pool.pt_rate
-        balance_array, principal_array, interest_array = np.zeros([self.num_tranches, term_length]), \
+        balance_array, principal_array, interest_array, cashflow_array = np.zeros([self.num_tranches, term_length]), \
                                                          np.zeros([self.num_tranches, term_length]),\
+                                                         np.zeros([self.num_tranches, term_length]), \
                                                          np.zeros([self.num_tranches, term_length])
         for tranche in range(self.num_tranches):
             balance_array[tranche][0] = self.par_amounts[tranche]
@@ -57,24 +58,26 @@ class SequentialTranche:
             interest_array[k][1: i + 1] = self.par_amounts[k] * pt_rate/12
             principal_array[k][i] = total_principal[i] - principal_array[k - 1][i]
             i += 1
-        return balance_array, interest_array, principal_array
+        for k in range(self.num_tranches):
+            cashflow_array[k][:] = principal_array[k][:] + interest_array[k][:]
+        return balance_array, interest_array, principal_array, cashflow_array
 
 
 def sequential_tranche_table_generator(start_date: datetime, term: int, num_tranches: int,
                                        balance_array: np.ndarray, interest_array: np.ndarray,
-                                       principal_array: np.ndarray):
+                                       principal_array: np.ndarray, cashflow_array: np.ndarray):
     """
     function to print out a time-series dataframe of balance, principal payments and interest payments for different
     tranches
     """
-    full_list = [balance_array, interest_array, principal_array]
+    full_list = [balance_array, principal_array, interest_array, cashflow_array]
     first_pay_date = (start_date + relativedelta.relativedelta(months=1)).replace(day=1)
     payment_dates_array = np.zeros(term).astype(datetime)
     payment_dates_array[0] = first_pay_date
     for i in range(1, term):
         payment_dates_array[i] = (payment_dates_array[i - 1] + relativedelta.relativedelta(months=1)).replace(day=1)
     tranche_list = [chr(65 + i) for i in range(num_tranches)]
-    metric_list = ['remaining_balance', 'principal', 'interest']
+    metric_list = ['remaining_balance', 'principal', 'interest', 'cashflow']
     header = [np.repeat(tranche_list, len(metric_list)), np.tile(metric_list, len(tranche_list))]
     df = pd.DataFrame(columns=header)
     df['Date'] = payment_dates_array
@@ -98,6 +101,8 @@ if __name__ == "__main__":
     pt_pool = PassThroughPool(mortgage, num_loans, svc_rate, g_fee, cpr_curve[2:])
     tranche = SequentialTranche(pt_pool=pt_pool, num_tranches=num_tranches, par_amounts=[194500000, 36000000, 96500000,
                                                                                          73000000])
-    balance_array, interest_array, principal_array = tranche.cf_breakdown()
-    print(sequential_tranche_table_generator(datetime(2020, 1, 1), 358, 4,
-                                             balance_array, interest_array, principal_array))
+    balance_array, interest_array, principal_array, cashflow_array = tranche.cf_breakdown()
+    df = sequential_tranche_table_generator(start_date, term, num_tranches,
+                                             balance_array, interest_array, principal_array, cashflow_array)
+
+
