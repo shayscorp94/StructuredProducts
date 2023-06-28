@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from pooldecomp import PassThroughPool, psa_to_smm
+from pooldecomp import PassThroughPool, psa_to_smm, wal_calculator
 from mortgage import FRM
 from datetime import datetime
 from dateutil import relativedelta
@@ -151,7 +151,7 @@ if __name__ == '__main__':
     start_date = datetime(2020, 1, 1)
     mortgage = FRM(term=term, total_starting_balance=400000, note_rate=0.06,
                     start_date=start_date)
-    loan_psa = 165
+    loan_psa = 250
     num_loans = 1000
     svc_rate = 0.0025
     g_fee = 0.0025
