@@ -256,6 +256,7 @@ if __name__ == "__main__":
                  lifetime_cap=0.05)
     pi_payments, balance_array, interest_array = arm_loan.gen_total_arm_schedule()
     df_arm_payments = arm_payment_table_generator(start_date, 360, pi_payments, balance_array, interest_array)
+    print(df_arm_payments)
 
 
 
